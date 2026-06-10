@@ -9,7 +9,7 @@ function formatDate(value?: string | null) {
 }
 
 export default async function UsersPage() {
-  await requireAdmin();
+  const current = await requireAdmin();
   const supabase = createSupabaseAdmin();
   const { data: profiles, error } = await supabase
     .from('staff_access')
@@ -46,16 +46,17 @@ export default async function UsersPage() {
             <tbody>
               {(profiles ?? []).map((item) => {
                 const authUser = authByEmail.get(item.email.toLowerCase());
+                const isMe = item.email.toLowerCase() === current.email;
                 const status = !item.is_active ? 'Disattivato' : authUser ? 'Accesso effettuato' : 'Pending';
                 return (
                   <tr key={item.id} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: 12 }}><input form={`profile-${item.id}`} name="full_name" defaultValue={item.full_name ?? ''} style={inputStyle} /></td>
-                    <td style={{ padding: 12 }}>{item.email}</td>
+                    <td style={{ padding: 12 }}><input form={`profile-${item.id}`} name="full_name" defaultValue={item.full_name ?? ''} style={inputStyle} />{isMe ? <small style={{ color: 'var(--wine)', fontWeight: 800 }}>Sei tu</small> : null}</td>
+                    <td style={{ padding: 12 }}>{item.email}<input form={`profile-${item.id}`} type="hidden" name="email" value={item.email} /></td>
                     <td style={{ padding: 12 }}><select form={`profile-${item.id}`} name="role" defaultValue={item.role} style={inputStyle}><option value="operator">Operatore</option><option value="admin">Admin</option></select></td>
                     <td style={{ padding: 12, fontWeight: 700 }}>{status}</td>
                     <td style={{ padding: 12 }}>{formatDate(authUser?.last_sign_in_at)}</td>
-                    <td style={{ padding: 12 }}><input form={`profile-${item.id}`} type="checkbox" name="is_active" defaultChecked={item.is_active} /></td>
-                    <td style={{ padding: 12 }}><form id={`profile-${item.id}`} action={updateProfile}><input type="hidden" name="id" value={item.id} /><button className="btn btn-secondary" type="submit">Salva</button></form></td>
+                    <td style={{ padding: 12 }}><input form={`profile-${item.id}`} type="checkbox" name="is_active" defaultChecked={item.is_active} disabled={isMe} /></td>
+                    <td style={{ padding: 12 }}><form id={`profile-${item.id}`} action={updateProfile}><input type="hidden" name="id" value={item.id} />{isMe ? <input type="hidden" name="is_active" value="on" /> : null}<button className="btn btn-secondary" type="submit">Salva</button></form></td>
                   </tr>
                 );
               })}
