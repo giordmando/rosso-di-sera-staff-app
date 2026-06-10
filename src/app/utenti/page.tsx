@@ -7,7 +7,7 @@ export default async function UsersPage() {
   await requireAdmin();
   const supabase = await createClient();
   const { data: profiles, error } = await supabase
-    .from('profiles')
+    .from('staff_access')
     .select('id, full_name, email, role, is_active, created_at')
     .order('created_at', { ascending: false });
 
@@ -18,16 +18,16 @@ export default async function UsersPage() {
         <p style={{ color: 'var(--wine)', fontWeight: 800 }}>STAFF</p>
         <h1>Utenti e autorizzazioni</h1>
         <p style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
-          Gestisci gli utenti autorizzati ad accedere all'app. Solo gli admin possono modificare ruoli e attivazioni.
+          Autorizza admin e operatori prima del primo accesso. Quando faranno login, il profilo operativo verra sincronizzato automaticamente.
         </p>
 
         <section className="card" style={{ marginBottom: 24 }}>
-          <h2>Aggiungi profilo staff</h2>
+          <h2>Aggiungi accesso staff</h2>
           <form action={createProfile} className="grid grid-3">
             <label>Nome<input name="full_name" style={inputStyle} /></label>
             <label>Email<input name="email" type="email" required style={inputStyle} /></label>
             <label>Ruolo<select name="role" style={inputStyle}><option value="operator">Operatore</option><option value="admin">Admin</option></select></label>
-            <button className="btn btn-primary" type="submit">Aggiungi profilo</button>
+            <button className="btn btn-primary" type="submit">Autorizza</button>
           </form>
         </section>
 
@@ -45,7 +45,7 @@ export default async function UsersPage() {
                   <td style={{ padding: 12 }}><form id={`profile-${item.id}`} action={updateProfile}><input type="hidden" name="id" value={item.id} /><button className="btn btn-secondary" type="submit">Salva</button></form></td>
                 </tr>
               ))}
-              {(profiles ?? []).length === 0 ? <tr><td colSpan={5} style={{ padding: 24, color: 'var(--muted)' }}>Nessun utente presente in profiles.</td></tr> : null}
+              {(profiles ?? []).length === 0 ? <tr><td colSpan={5} style={{ padding: 24, color: 'var(--muted)' }}>Nessun accesso staff configurato.</td></tr> : null}
             </tbody>
           </table>
         </section>
