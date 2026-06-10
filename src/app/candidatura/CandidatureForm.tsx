@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { EXPERIENCE_OPTIONS } from '@/lib/constants';
-
-const MARCHE_PROVINCES = ['AN', 'AP', 'FM', 'MC', 'PU'];
-const MARCHE_COMMONS = ['Ancona', 'Ascoli Piceno', 'Fermo', 'Macerata', 'Pesaro', 'Senigallia', 'Jesi', 'Fano', 'Civitanova Marche', 'San Benedetto del Tronto'];
+import { COMUNI_BY_PROVINCE, PROVINCES, REGION_OPTIONS } from '@/lib/geo/marche';
 
 export function CandidatureForm() {
   const [message, setMessage] = useState('');
   const [ok, setOk] = useState(false);
   const [pending, setPending] = useState(false);
+  const [province, setProvince] = useState('');
+  const comuni = province ? COMUNI_BY_PROVINCE[province] ?? [] : [];
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -21,14 +22,15 @@ export function CandidatureForm() {
     setPending(false);
     setOk(response.ok);
     setMessage(result.message || (response.ok ? 'Candidatura inviata' : 'Errore invio candidatura'));
-    if (response.ok) event.currentTarget.reset();
+    if (response.ok) { event.currentTarget.reset(); setProvince(''); }
   }
+
   return (
     <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18, marginTop: 28 }}>
       <div className="form-grid"><label><span>Ragione sociale</span><input name="company_name" /></label><label><span>Nome azienda / cantina</span><input name="brand_name" required /></label></div>
       <div className="form-grid"><label><span>Referente</span><input name="contact_name" /></label><label><span>Email</span><input name="email" type="email" /></label></div>
       <div className="form-grid"><label><span>Telefono</span><input name="phone" /></label><label><span>Sito web / Social</span><input name="website_social" /></label></div>
-      <div className="grid grid-3"><label><span>Comune</span><select name="city" defaultValue=""><option value="">Seleziona comune</option>{MARCHE_COMMONS.map((item) => <option key={item} value={item}>{item}</option>)}<option value="Altro">Altro / fuori lista</option></select></label><label><span>Provincia</span><select name="province" defaultValue=""><option value="">Seleziona provincia</option>{MARCHE_PROVINCES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label><span>Regione</span><select name="region" defaultValue="Marche"><option value="Marche">Marche</option><option value="Abruzzo">Abruzzo</option><option value="Emilia-Romagna">Emilia-Romagna</option><option value="Umbria">Umbria</option><option value="Altro">Altro</option></select></label></div>
+      <div className="grid grid-3"><label><span>Regione</span><select name="region" defaultValue="Marche">{REGION_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label><span>Provincia</span><select name="province" value={province} onChange={(event) => setProvince(event.target.value)}><option value="">Seleziona provincia</option>{PROVINCES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label><span>Comune</span><select name="city" defaultValue="" disabled={!province}><option value="">{province ? 'Seleziona comune' : 'Prima scegli la provincia'}</option>{comuni.map((item) => <option key={item} value={item}>{item}</option>)}<option value="Altro">Altro / fuori lista</option></select></label></div>
       <label><span>Prodotti presentati</span><textarea name="products" rows={5} /></label>
       <label><span>Racconta la tua azienda</span><textarea name="company_story" rows={5} /></label>
       <fieldset className="card" style={{ boxShadow: 'none' }}><legend className="eyebrow">Esperienze offerte</legend><div className="grid grid-2">{EXPERIENCE_OPTIONS.map((item) => <label key={item} style={{ fontWeight: 400 }}><input type="checkbox" name="experiences" value={item} style={{ width: 'auto', marginRight: 8 }} />{item}</label>)}</div></fieldset>
