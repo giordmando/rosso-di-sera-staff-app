@@ -11,6 +11,7 @@ export function AppHeader() {
           <Link href="/espositori">Espositori</Link>
           <Link href="/pagamenti">Pagamenti</Link>
           <Link href="/candidatura">Candidatura</Link>
+          <Link href="/utenti">Utenti</Link>
           <StaffLogout />
         </nav>
       </div>
