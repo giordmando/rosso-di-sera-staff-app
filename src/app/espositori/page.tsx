@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AppHeader } from '@/components/AppHeader';
+import { GoogleSheetExportButton } from '@/components/GoogleSheetExportButton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { createClient } from '@/lib/supabase/server';
 import type { Exhibitor } from '@/types/database';
@@ -24,7 +25,8 @@ export default async function ExhibitorsPage() {
             <p style={{ color: 'var(--wine)', fontWeight: 800 }}>GESTIONE</p>
             <h1 style={{ margin: 0 }}>Espositori</h1>
           </div>
-          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <GoogleSheetExportButton />
             <a href="/api/export/exhibitors" className="btn btn-secondary">Esporta CSV</a>
             <Link href="/candidatura" className="btn btn-primary">Nuovo espositore</Link>
           </nav>
