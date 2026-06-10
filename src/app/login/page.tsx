@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -15,7 +16,7 @@ export default function LoginPage() {
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
     });
   }
 
@@ -67,6 +68,7 @@ export default function LoginPage() {
           <p style={{ marginTop: 20, fontSize: 14, color: 'var(--muted)' }}>
             Dopo il login email/password verrai indirizzato alla verifica MFA.
           </p>
+          <p style={{ marginTop: 16 }}><Link href="/" style={{ color: 'var(--wine)', fontWeight: 700 }}>Torna alla home</Link></p>
         </div>
       </div>
     </main>
