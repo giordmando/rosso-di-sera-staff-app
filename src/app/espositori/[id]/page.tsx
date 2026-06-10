@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { AppHeader } from '@/components/AppHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { createClient } from '@/lib/supabase/server';
+import { EXHIBITOR_STATUSES } from '@/lib/constants';
+import { updateExhibitor } from '@/lib/actions/exhibitors';
 import { PaymentForm } from './PaymentForm';
 
 export default async function ExhibitorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,18 +28,33 @@ export default async function ExhibitorDetailPage({ params }: { params: Promise<
             <p style={{ color: 'var(--wine)', fontWeight: 800 }}>SCHEDA ESPOSITORE</p>
             <h1>{item.brand_name}</h1>
             <StatusBadge status={item.status} />
-            <dl style={{ display: 'grid', gap: 12, marginTop: 24 }}>
-              <div><dt>Ragione sociale</dt><dd>{item.company_name ?? '-'}</dd></div>
-              <div><dt>Referente</dt><dd>{item.contact_name ?? '-'}</dd></div>
-              <div><dt>Email</dt><dd>{item.email ?? '-'}</dd></div>
-              <div><dt>Telefono</dt><dd>{item.phone ?? '-'}</dd></div>
-              <div><dt>Località</dt><dd>{item.city ?? '-'} {item.province ?? ''} {item.region ?? ''}</dd></div>
-              <div><dt>Sito/Social</dt><dd>{item.website_social ?? '-'}</dd></div>
-            </dl>
-            <h2 style={{ marginTop: 28 }}>Prodotti</h2>
-            <p style={{ whiteSpace: 'pre-wrap', color: 'var(--muted)' }}>{item.products ?? '-'}</p>
-            <h2>Racconto azienda</h2>
-            <p style={{ whiteSpace: 'pre-wrap', color: 'var(--muted)' }}>{item.company_story ?? '-'}</p>
+
+            <form action={updateExhibitor} style={{ display: 'grid', gap: 14, marginTop: 24 }}>
+              <input type="hidden" name="id" value={item.id} />
+              <label>Stato
+                <select name="status" defaultValue={item.status} style={inputStyle}>
+                  {EXHIBITOR_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                </select>
+              </label>
+              <label>Nome azienda / cantina<input name="brand_name" defaultValue={item.brand_name ?? ''} required style={inputStyle} /></label>
+              <label>Ragione sociale<input name="company_name" defaultValue={item.company_name ?? ''} style={inputStyle} /></label>
+              <div className="grid grid-2">
+                <label>Referente<input name="contact_name" defaultValue={item.contact_name ?? ''} style={inputStyle} /></label>
+                <label>Email<input name="email" defaultValue={item.email ?? ''} style={inputStyle} /></label>
+              </div>
+              <div className="grid grid-2">
+                <label>Telefono<input name="phone" defaultValue={item.phone ?? ''} style={inputStyle} /></label>
+                <label>Provincia<input name="province" defaultValue={item.province ?? ''} style={inputStyle} /></label>
+              </div>
+              <div className="grid grid-2">
+                <label>Comune<input name="city" defaultValue={item.city ?? ''} style={inputStyle} /></label>
+                <label>Regione<input name="region" defaultValue={item.region ?? ''} style={inputStyle} /></label>
+              </div>
+              <label>Prodotti<textarea name="products" defaultValue={item.products ?? ''} rows={4} style={inputStyle} /></label>
+              <label>Racconto azienda<textarea name="company_story" defaultValue={item.company_story ?? ''} rows={4} style={inputStyle} /></label>
+              <label>Note interne<textarea name="internal_notes" defaultValue={item.internal_notes ?? ''} rows={4} style={inputStyle} /></label>
+              <button className="btn btn-primary" type="submit">Salva modifiche</button>
+            </form>
           </section>
           <section className="card">
             <h2>Pagamenti</h2>
@@ -60,3 +77,13 @@ export default async function ExhibitorDetailPage({ params }: { params: Promise<
     </main>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  marginTop: 8,
+  padding: 12,
+  borderRadius: 12,
+  border: '1px solid var(--border)',
+  background: 'white',
+};
