@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/auth/admin';
 import { requireActiveStaff } from '@/lib/auth/profile';
 import { getSheetsClient } from '@/lib/google/sheets';
+import { writeAuditLog } from '@/lib/audit/log';
 
 const headers = ['ID', 'Cantina', 'Ragione sociale', 'Referente', 'Email', 'Telefono', 'Comune', 'Provincia', 'Regione', 'Stato', 'Prodotti', 'Note interne', 'Creato il', 'Aggiornato il'];
 
@@ -69,6 +70,8 @@ export async function POST(request: Request) {
       created++;
     }
   }
+
+  await writeAuditLog({ action: 'google_sheet.import.apply', entityType: 'google_sheet', entityId: spreadsheetId, message: 'Applicato import Google Sheet', metadata: { created, updated, skippedConflicts, overwriteConflicts } });
 
   return NextResponse.json({ message: 'Import completato', created, updated, skippedConflicts });
 }
