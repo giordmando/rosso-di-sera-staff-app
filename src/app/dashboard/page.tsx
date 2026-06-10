@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { AppHeader } from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
+import { requireActiveStaff } from '@/lib/auth/profile';
 
 export default async function DashboardPage() {
+  const profile = await requireActiveStaff();
   const supabase = await createClient();
 
   const { data: exhibitors } = await supabase.from('exhibitors').select('id, status');
@@ -35,6 +37,7 @@ export default async function DashboardPage() {
           <div>
             <p style={{ color: 'var(--wine)', fontWeight: 800 }}>ROSSO DI SERA 2026</p>
             <h1 style={{ margin: 0 }}>Dashboard staff</h1>
+            <p style={{ color: 'var(--muted)' }}>Accesso: {profile.full_name ?? profile.email} - {profile.role}</p>
           </div>
           <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link className="btn btn-secondary" href="/espositori">Espositori</Link>
