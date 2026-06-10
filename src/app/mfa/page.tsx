@@ -54,5 +54,46 @@ export default function MfaPage() {
     window.location.href = '/login';
   }
 
-  return <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}><div className="container"><div className="card" style={{ maxWidth: 620, margin: '0 auto' }}><p className="eyebrow">Verifica MFA</p><h1 className="page-title">Accesso sicuro</h1><p className="muted">Usa un'app Authenticator per completare l'accesso staff.</p>{loading ? <p className="muted">Caricamento verifica...</p> : null>{!loading && mode === 'enroll' ? <div className="card" style={{ boxShadow: 'none', marginTop: 22 }}><h2>Configura autenticazione</h2><p className="muted">Scansiona il QR code con Google Authenticator, Microsoft Authenticator, 1Password o app compatibile.</p>{qr ? <img src={qr} alt="QR code MFA" style={{ width: 220, height: 220, display: 'block', margin: '20px auto', background: 'white', padding: 10, borderRadius: 16 }} /> : null}</div> : null}{!loading && mode === 'verify' ? <div className="card" style={{ boxShadow: 'none', marginTop: 22 }}><h2>Inserisci codice</h2><p className="muted">Apri la tua app Authenticator e inserisci il codice temporaneo a 6 cifre.</p></div> : null}{!loading ? <div style={{ display: 'grid', gap: 14, marginTop: 22 }}><label><span>Codice 2FA</span><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label><div className="toolbar" style={{ justifyContent: 'flex-start' }}><button className="btn btn-primary" type="button" onClick={verify}>Verifica e continua</button><button className="btn btn-secondary" type="button" onClick={signOut}>Esci</button></div></div> : null}{message ? <p className="badge" style={{ marginTop: 20 }}>{message}</p> : null}<p style={{ marginTop: 22 }}><Link href="/login" style={{ color: 'var(--wine)', fontWeight: 800 }}>Torna al login</Link></p></div></div></main>;
+  return (
+    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
+      <div className="container">
+        <div className="card" style={{ maxWidth: 620, margin: '0 auto' }}>
+          <p className="eyebrow">Verifica MFA</p>
+          <h1 className="page-title">Accesso sicuro</h1>
+          <p className="muted">Usa un'app Authenticator per completare l'accesso staff.</p>
+
+          {loading ? <p className="muted">Caricamento verifica...</p> : null}
+
+          {!loading && mode === 'enroll' ? (
+            <div className="card" style={{ boxShadow: 'none', marginTop: 22 }}>
+              <h2>Configura autenticazione</h2>
+              <p className="muted">Scansiona il QR code con Google Authenticator, Microsoft Authenticator, 1Password o app compatibile.</p>
+              {qr ? <img src={qr} alt="QR code MFA" style={{ width: 220, height: 220, display: 'block', margin: '20px auto', background: 'white', padding: 10, borderRadius: 16 }} /> : null}
+            </div>
+          ) : null}
+
+          {!loading && mode === 'verify' ? (
+            <div className="card" style={{ boxShadow: 'none', marginTop: 22 }}>
+              <h2>Inserisci codice</h2>
+              <p className="muted">Apri la tua app Authenticator e inserisci il codice temporaneo a 6 cifre.</p>
+            </div>
+          ) : null}
+
+          {!loading ? (
+            <div style={{ display: 'grid', gap: 14, marginTop: 22 }}>
+              <label><span>Codice 2FA</span><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
+              <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
+                <button className="btn btn-primary" type="button" onClick={verify}>Verifica e continua</button>
+                <button className="btn btn-secondary" type="button" onClick={signOut}>Esci</button>
+              </div>
+            </div>
+          ) : null}
+
+          {message ? <p className="badge" style={{ marginTop: 20 }}>{message}</p> : null}
+
+          <p style={{ marginTop: 22 }}><Link href="/login" style={{ color: 'var(--wine)', fontWeight: 800 }}>Torna al login</Link></p>
+        </div>
+      </div>
+    </main>
+  );
 }
