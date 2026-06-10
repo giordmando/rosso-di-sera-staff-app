@@ -3,7 +3,7 @@ import { createSupabaseAdmin } from '@/lib/auth/admin';
 import { requireActiveStaff } from '@/lib/auth/profile';
 import { getSheetsClient } from '@/lib/google/sheets';
 
-const headers = ['Cantina', 'Ragione sociale', 'Referente', 'Email', 'Telefono', 'Comune', 'Provincia', 'Regione', 'Stato', 'Prodotti', 'Note interne', 'Creato il'];
+const headers = ['ID', 'Cantina', 'Ragione sociale', 'Referente', 'Email', 'Telefono', 'Comune', 'Provincia', 'Regione', 'Stato', 'Prodotti', 'Note interne', 'Creato il', 'Aggiornato il'];
 
 function rowToRecord(row: string[]) {
   const record: Record<string, string> = {};
@@ -37,13 +37,14 @@ export async function POST(request: Request) {
 
   const sheets = getSheetsClient();
   const supabase = createSupabaseAdmin();
-  const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:L' });
+  const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:N' });
   const rows = sheet.data.values ?? [];
 
   const { data: edition } = await supabase.from('editions').select('id').eq('year', 2026).single();
   if (!edition) return NextResponse.json({ message: 'Edizione 2026 non configurata' }, { status: 400 });
 
   const { data: exhibitors } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at');
+  const byId = new Map((exhibitors ?? []).map((item) => [String(item.id), item]));
   const byEmail = new Map((exhibitors ?? []).filter((item) => item.email).map((item) => [String(item.email).toLowerCase(), item]));
   const byBrand = new Map((exhibitors ?? []).map((item) => [String(item.brand_name).toLowerCase(), item]));
 
@@ -54,8 +55,9 @@ export async function POST(request: Request) {
   for (const row of rows) {
     const record = rowToRecord(row as string[]);
     if (!record.Cantina && !record.Email) continue;
-    const existing = record.Email ? byEmail.get(record.Email.toLowerCase()) : byBrand.get(record.Cantina.toLowerCase());
-    const isConflict = existing && record['Creato il'] && existing.updated_at && new Date(existing.updated_at) > new Date(record['Creato il']);
+    const existing = record.ID ? byId.get(record.ID) : record.Email ? byEmail.get(record.Email.toLowerCase()) : byBrand.get(record.Cantina.toLowerCase());
+    const sheetDate = record['Aggiornato il'] || record['Creato il'];
+    const isConflict = existing && sheetDate && existing.updated_at && new Date(existing.updated_at) > new Date(sheetDate);
     if (isConflict && !overwriteConflicts) { skippedConflicts++; continue; }
 
     const payload = toPayload(record);
