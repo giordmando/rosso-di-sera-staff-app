@@ -32,18 +32,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const isProtected = protectedRoutes.some((path) => request.nextUrl.pathname.startsWith(path));
-
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
   if (isProtected && user && process.env.NEXT_PUBLIC_REQUIRE_MFA === 'true') {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
     if (data.currentLevel !== 'aal2') {
       const url = request.nextUrl.clone();
       url.pathname = '/mfa';
