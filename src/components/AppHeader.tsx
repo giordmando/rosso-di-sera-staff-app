@@ -4,22 +4,18 @@ import { StaffLogout } from './StaffLogout';
 
 export async function AppHeader() {
   const profile = await getStaffProfile().catch(() => null);
+  const isAdmin = profile?.role === 'admin';
   return (
-    <header style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,247,236,0.78)' }}>
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', paddingTop: 16, paddingBottom: 16 }}>
-        <Link href="/dashboard" style={{ fontWeight: 900, color: 'var(--wine)' }}>Rosso di Sera Staff</Link>
-        <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 14, alignItems: 'center' }}>
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/espositori">Espositori</Link>
-          <Link href="/pagamenti">Pagamenti</Link>
-          <Link href="/sync/google-sheet">Sync</Link>
-          <Link href="/candidatura">Candidatura</Link>
-          <Link href="/utenti">Utenti</Link>
-          <Link href="/log">Log</Link>
-          {profile ? <span style={{ border: '1px solid var(--border)', borderRadius: 999, padding: '4px 10px', color: 'var(--wine)', fontWeight: 800 }}>{profile.role}</span> : null}
-          <StaffLogout />
-        </nav>
+    <header className="app-header">
+      <div className="container app-header-inner">
+        <Link href="/dashboard" className="app-logo">Rosso di Sera <span>Staff</span></Link>
+        <details className="mobile-menu"><summary>Menu</summary><nav className="mobile-menu-panel"><NavLinks isAdmin={isAdmin} /><div className="mobile-actions">{profile ? <span className="badge">{profile.role}</span> : null}<StaffLogout /></div></nav></details>
+        <nav className="desktop-nav"><NavLinks isAdmin={isAdmin} />{profile ? <span className="badge">{profile.role}</span> : null}<StaffLogout /></nav>
       </div>
     </header>
   );
+}
+
+function NavLinks({ isAdmin }: { isAdmin: boolean }) {
+  return <><Link href="/dashboard">Dashboard</Link><Link href="/espositori">Espositori</Link><Link href="/pagamenti">Pagamenti</Link><Link href="/sync/google-sheet">Sync</Link><Link href="/candidatura">Candidatura</Link>{isAdmin ? <Link href="/utenti">Utenti</Link> : null}{isAdmin ? <Link href="/log">Log</Link> : null}</>;
 }
