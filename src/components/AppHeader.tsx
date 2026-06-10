@@ -13,6 +13,7 @@ export function AppHeader() {
           <Link href="/sync/google-sheet">Sync</Link>
           <Link href="/candidatura">Candidatura</Link>
           <Link href="/utenti">Utenti</Link>
+          <Link href="/log">Log</Link>
           <StaffLogout />
         </nav>
       </div>
