@@ -11,16 +11,19 @@ export default async function DashboardPage() {
   const total = exhibitors?.length ?? 0;
   const confirmed = exhibitors?.filter((item) => item.status === 'confermato').length ?? 0;
   const pendingPayment = exhibitors?.filter((item) => item.status === 'in_attesa_pagamento').length ?? 0;
+  const accepted = exhibitors?.filter((item) => item.status === 'accettato').length ?? 0;
   const received = exhibitors?.filter((item) => item.status === 'candidatura_ricevuta').length ?? 0;
   const paid = payments?.reduce((sum, item) => sum + Number(item.paid_amount ?? 0), 0) ?? 0;
   const maxExhibitors = 45;
+  const reservedPlaces = confirmed;
 
   const stats = [
-    { label: 'Espositori', value: String(total) },
+    { label: 'Espositori totali', value: String(total) },
     { label: 'Candidature ricevute', value: String(received) },
+    { label: 'Accettati', value: String(accepted) },
     { label: 'Confermati', value: String(confirmed) },
     { label: 'In attesa pagamento', value: String(pendingPayment) },
-    { label: 'Posti disponibili', value: String(Math.max(maxExhibitors - total, 0)) },
+    { label: 'Posti disponibili', value: String(Math.max(maxExhibitors - reservedPlaces, 0)) },
     { label: 'Incassato', value: `€ ${paid.toFixed(2)}` },
   ];
 
@@ -55,7 +58,7 @@ export default async function DashboardPage() {
             <li>Valuta le candidature ricevute.</li>
             <li>Aggiorna stato e note degli espositori.</li>
             <li>Registra pagamenti dalla scheda espositore.</li>
-            <li>Monitora posti disponibili e incasso.</li>
+            <li>I posti disponibili diminuiscono solo quando una candidatura viene confermata.</li>
           </ul>
         </section>
       </div>
