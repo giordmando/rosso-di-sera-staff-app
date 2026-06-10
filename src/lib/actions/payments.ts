@@ -16,6 +16,14 @@ const schema = z.object({
 
 export type PaymentState = { ok: boolean; message: string };
 
+async function refreshExhibitorPaymentStatus(exhibitorId: string, expectedAmount: number) {
+  const supabase = await createClient();
+  const { data: payments } = await supabase.from('payments').select('paid_amount').eq('exhibitor_id', exhibitorId);
+  const totalPaid = payments?.reduce((sum, item) => sum + Number(item.paid_amount ?? 0), 0) ?? 0;
+  const status = totalPaid >= expectedAmount ? 'confermato' : totalPaid > 0 ? 'in_attesa_pagamento' : 'accettato';
+  await supabase.from('exhibitors').update({ status }).eq('id', exhibitorId);
+}
+
 export async function registerPayment(_: PaymentState, formData: FormData): Promise<PaymentState> {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -45,11 +53,26 @@ export async function registerPayment(_: PaymentState, formData: FormData): Prom
 
   if (error) return { ok: false, message: error.message };
 
-  await supabase.from('exhibitors').update({ status: 'confermato' }).eq('id', parsed.data.exhibitor_id);
-
+  await refreshExhibitorPaymentStatus(parsed.data.exhibitor_id, parsed.data.expected_amount);
   revalidatePath(`/espositori/${parsed.data.exhibitor_id}`);
   revalidatePath('/pagamenti');
   revalidatePath('/espositori');
+  revalidatePath('/dashboard');
 
   return { ok: true, message: 'Pagamento registrato correttamente.' };
+}
+
+export async function deletePayment(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get('id') || '');
+  const exhibitorId = String(formData.get('exhibitor_id') || '');
+  const expectedAmount = Number(formData.get('expected_amount') || 183);
+
+  if (!id || !exhibitorId) return;
+
+  await supabase.from('payments').delete().eq('id', id);
+  await refreshExhibitorPaymentStatus(exhibitorId, expectedAmount);
+  revalidatePath(`/espositori/${exhibitorId}`);
+  revalidatePath('/pagamenti');
+  revalidatePath('/dashboard');
 }
