@@ -4,13 +4,7 @@ import { createSupabaseAdmin } from '@/lib/auth/admin';
 import { requireAdmin } from '@/lib/auth/profile';
 
 function formatDate(value: string) { return new Intl.DateTimeFormat('it-IT', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value)); }
-function pageUrl(page: number, q: string, action: string) {
-  const params = new URLSearchParams();
-  if (q) params.set('q', q);
-  if (action) params.set('action', action);
-  params.set('page', String(page));
-  return `/log?${params.toString()}`;
-}
+function pageUrl(page: number, q: string, action: string) { const params = new URLSearchParams(); if (q) params.set('q', q); if (action) params.set('action', action); params.set('page', String(page)); return `/log?${params.toString()}`; }
 
 export default async function LogPage({ searchParams }: { searchParams?: { q?: string; action?: string; page?: string } }) {
   await requireAdmin();
@@ -29,22 +23,10 @@ export default async function LogPage({ searchParams }: { searchParams?: { q?: s
   const { data: logs, error, count } = await query;
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / limit));
 
-  return (
-    <main>
-      <AppHeader />
-      <div className="container" style={{ paddingTop: 36, paddingBottom: 36 }}>
-        <p style={{ color: 'var(--wine)', fontWeight: 800 }}>ADMIN</p><h1>Log attività</h1>
-        <p style={{ color: 'var(--muted)', lineHeight: 1.6 }}>Log attività admin con filtri e paginazione.</p>
-        <form className="card" style={{ marginBottom: 20, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'end' }}>
-          <label style={{ display: 'grid', gap: 6 }}><span>Cerca</span><input name="q" defaultValue={q} placeholder="utente, azione, messaggio" /></label>
-          <label style={{ display: 'grid', gap: 6 }}><span>Azione</span><select name="action" defaultValue={action}><option value="">Tutte</option>{actionOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-          <button className="btn btn-primary" type="submit">Filtra</button><Link className="btn btn-secondary" href="/log">Reset</Link>
-          <span style={{ color: 'var(--muted)' }}>{count ?? 0} risultati</span>
-        </form>
-        {error ? <div className="card" style={{ color: 'var(--wine)', marginBottom: 24 }}>Errore caricamento: {error.message}</div> : null}
-        <section className="card" style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr style={{ textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Data</th><th style={{ padding: 12 }}>Utente</th><th style={{ padding: 12 }}>Azione</th><th style={{ padding: 12 }}>Entità</th><th style={{ padding: 12 }}>Messaggio</th></tr></thead><tbody>{(logs ?? []).map((item) => <tr key={item.id} style={{ borderTop: '1px solid var(--border)' }}><td style={{ padding: 12 }}>{formatDate(item.created_at)}</td><td style={{ padding: 12 }}>{item.actor_email ?? '-'}</td><td style={{ padding: 12, fontWeight: 700 }}>{item.action}</td><td style={{ padding: 12 }}>{item.entity_type ?? '-'} {item.entity_id ? `#${item.entity_id}` : ''}</td><td style={{ padding: 12 }}>{item.message ?? '-'}</td></tr>)}{(logs ?? []).length === 0 ? <tr><td colSpan={5} style={{ padding: 24, color: 'var(--muted)' }}>Nessun log registrato.</td></tr> : null}</tbody></table></section>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 16 }}><Link className="btn btn-secondary" href={pageUrl(Math.max(1, page - 1), q, action)}>Precedente</Link><span>Pagina {page} di {totalPages}</span><Link className="btn btn-secondary" href={pageUrl(Math.min(totalPages, page + 1), q, action)}>Successiva</Link></div>
-      </div>
-    </main>
-  );
+  return <main><AppHeader /><div className="container page"><div className="page-header"><div><p className="eyebrow">Admin</p><h1 className="page-title">Log attività</h1><p className="muted">Controlla le operazioni critiche effettuate dallo staff.</p></div></div>
+    <form className="card form-row" style={{ marginBottom: 20 }}><label style={{ display: 'grid', gap: 6, minWidth: 280 }}><span>Cerca</span><input name="q" defaultValue={q} placeholder="utente, azione, messaggio" /></label><label style={{ display: 'grid', gap: 6, minWidth: 260 }}><span>Azione</span><select name="action" defaultValue={action}><option value="">Tutte</option>{actionOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><button className="btn btn-primary" type="submit">Filtra</button><Link className="btn btn-secondary" href="/log">Reset</Link><span className="muted">{count ?? 0} risultati</span></form>
+    {error ? <div className="card" style={{ color: 'var(--wine)', marginBottom: 24 }}>Errore caricamento: {error.message}</div> : null}
+    <section className="card table-wrap"><table className="table"><thead><tr><th>Data</th><th>Utente</th><th>Azione</th><th>Entità</th><th>Messaggio</th></tr></thead><tbody>{(logs ?? []).map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td>{item.actor_email ?? '-'}</td><td><span className="badge">{item.action}</span></td><td>{item.entity_type ?? '-'} {item.entity_id ? <span className="truncate">#{item.entity_id}</span> : null}</td><td>{item.message ?? '-'}</td></tr>)}{(logs ?? []).length === 0 ? <tr><td colSpan={5} className="muted">Nessun log registrato.</td></tr> : null}</tbody></table></section>
+    <div className="toolbar" style={{ justifyContent: 'flex-start', marginTop: 16 }}><Link className="btn btn-secondary" href={pageUrl(Math.max(1, page - 1), q, action)}>Precedente</Link><span>Pagina {page} di {totalPages}</span><Link className="btn btn-secondary" href={pageUrl(Math.min(totalPages, page + 1), q, action)}>Successiva</Link></div>
+  </div></main>;
 }
