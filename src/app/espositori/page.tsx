@@ -24,7 +24,10 @@ export default async function ExhibitorsPage() {
             <p style={{ color: 'var(--wine)', fontWeight: 800 }}>GESTIONE</p>
             <h1 style={{ margin: 0 }}>Espositori</h1>
           </div>
-          <Link href="/candidatura" className="btn btn-primary">Nuovo espositore</Link>
+          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <a href="/api/export/exhibitors" className="btn btn-secondary">Esporta CSV</a>
+            <Link href="/candidatura" className="btn btn-primary">Nuovo espositore</Link>
+          </nav>
         </header>
 
         {error ? <div className="card" style={{ color: 'var(--wine)' }}>Errore caricamento: {error.message}</div> : null}
@@ -43,10 +46,7 @@ export default async function ExhibitorsPage() {
             <tbody>
               {rows.map((item) => (
                 <tr key={item.id} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ padding: 12 }}>
-                    <strong>{item.brand_name}</strong><br />
-                    <span style={{ color: 'var(--muted)' }}>{item.company_name ?? '-'}</span>
-                  </td>
+                  <td style={{ padding: 12 }}><strong>{item.brand_name}</strong><br /><span style={{ color: 'var(--muted)' }}>{item.company_name ?? '-'}</span></td>
                   <td style={{ padding: 12 }}>{item.city ?? '-'} {item.province ? `(${item.province})` : ''}</td>
                   <td style={{ padding: 12 }}>{item.email ?? '-'}</td>
                   <td style={{ padding: 12 }}><StatusBadge status={item.status} /></td>
