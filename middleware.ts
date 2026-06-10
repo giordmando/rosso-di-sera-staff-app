@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
 
   if (isProtected && user && process.env.NEXT_PUBLIC_REQUIRE_MFA === 'true') {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (data.currentLevel !== 'aal2') {
+    if (data?.currentLevel !== 'aal2') {
       const url = request.nextUrl.clone();
       url.pathname = '/mfa';
       return NextResponse.redirect(url);
