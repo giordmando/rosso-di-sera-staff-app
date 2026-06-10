@@ -3,6 +3,7 @@ import { createSupabaseAdmin } from '@/lib/auth/admin';
 import { requireActiveStaff } from '@/lib/auth/profile';
 import { getSheetsClient } from '@/lib/google/sheets';
 import { writeAuditLog } from '@/lib/audit/log';
+import { normalizeProvince, normalizeRegion } from '@/lib/geo/normalize';
 
 const headers = ['ID', 'Cantina', 'Ragione sociale', 'Referente', 'Email', 'Telefono', 'Comune', 'Provincia', 'Regione', 'Stato', 'Prodotti', 'Note interne', 'Creato il', 'Aggiornato il'];
 
@@ -20,8 +21,8 @@ function toPayload(record: Record<string, string>) {
     email: record.Email || null,
     phone: record.Telefono || null,
     city: record.Comune || null,
-    province: record.Provincia || null,
-    region: record.Regione || null,
+    province: normalizeProvince(record.Provincia),
+    region: normalizeRegion(record.Regione),
     status: record.Stato || 'candidatura_ricevuta',
     products: record.Prodotti || null,
     internal_notes: record['Note interne'] || null,
@@ -35,24 +36,19 @@ export async function POST(request: Request) {
   const overwriteConflicts = Boolean(body.overwriteConflicts);
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
   if (!spreadsheetId) return NextResponse.json({ message: 'GOOGLE_SHEETS_SPREADSHEET_ID mancante' }, { status: 500 });
-
   const sheets = getSheetsClient();
   const supabase = createSupabaseAdmin();
   const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:N' });
   const rows = sheet.data.values ?? [];
-
   const { data: edition } = await supabase.from('editions').select('id').eq('year', 2026).single();
   if (!edition) return NextResponse.json({ message: 'Edizione 2026 non configurata' }, { status: 400 });
-
   const { data: exhibitors } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at');
   const byId = new Map((exhibitors ?? []).map((item) => [String(item.id), item]));
   const byEmail = new Map((exhibitors ?? []).filter((item) => item.email).map((item) => [String(item.email).toLowerCase(), item]));
   const byBrand = new Map((exhibitors ?? []).map((item) => [String(item.brand_name).toLowerCase(), item]));
-
   let created = 0;
   let updated = 0;
   let skippedConflicts = 0;
-
   for (const row of rows) {
     const record = rowToRecord(row as string[]);
     if (!record.Cantina && !record.Email) continue;
@@ -60,7 +56,6 @@ export async function POST(request: Request) {
     const sheetDate = record['Aggiornato il'] || record['Creato il'];
     const isConflict = existing && sheetDate && existing.updated_at && new Date(existing.updated_at) > new Date(sheetDate);
     if (isConflict && !overwriteConflicts) { skippedConflicts++; continue; }
-
     const payload = toPayload(record);
     if (existing) {
       await supabase.from('exhibitors').update(payload).eq('id', existing.id);
@@ -70,8 +65,6 @@ export async function POST(request: Request) {
       created++;
     }
   }
-
   await writeAuditLog({ action: 'google_sheet.import.apply', entityType: 'google_sheet', entityId: spreadsheetId, message: 'Applicato import Google Sheet', metadata: { created, updated, skippedConflicts, overwriteConflicts } });
-
   return NextResponse.json({ message: 'Import completato', created, updated, skippedConflicts });
 }
