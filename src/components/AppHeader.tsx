@@ -10,6 +10,7 @@ export function AppHeader() {
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/espositori">Espositori</Link>
           <Link href="/pagamenti">Pagamenti</Link>
+          <Link href="/sync/google-sheet">Sync</Link>
           <Link href="/candidatura">Candidatura</Link>
           <Link href="/utenti">Utenti</Link>
           <StaffLogout />
