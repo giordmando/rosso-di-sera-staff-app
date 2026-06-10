@@ -6,10 +6,8 @@ import { requireActiveStaff } from '@/lib/auth/profile';
 export default async function DashboardPage() {
   const profile = await requireActiveStaff();
   const supabase = await createClient();
-
   const { data: exhibitors } = await supabase.from('exhibitors').select('id, status');
   const { data: payments } = await supabase.from('payments').select('paid_amount');
-
   const total = exhibitors?.length ?? 0;
   const confirmed = exhibitors?.filter((item) => item.status === 'confermato').length ?? 0;
   const pendingPayment = exhibitors?.filter((item) => item.status === 'in_attesa_pagamento').length ?? 0;
@@ -17,54 +15,19 @@ export default async function DashboardPage() {
   const received = exhibitors?.filter((item) => item.status === 'candidatura_ricevuta').length ?? 0;
   const paid = payments?.reduce((sum, item) => sum + Number(item.paid_amount ?? 0), 0) ?? 0;
   const maxExhibitors = 45;
-  const reservedPlaces = confirmed;
-
+  const available = Math.max(maxExhibitors - confirmed, 0);
   const stats = [
-    { label: 'Espositori totali', value: String(total) },
-    { label: 'Candidature ricevute', value: String(received) },
-    { label: 'Accettati', value: String(accepted) },
+    { label: 'Posti disponibili', value: String(available) },
     { label: 'Confermati', value: String(confirmed) },
-    { label: 'In attesa pagamento', value: String(pendingPayment) },
-    { label: 'Posti disponibili', value: String(Math.max(maxExhibitors - reservedPlaces, 0)) },
     { label: 'Incassato', value: `€ ${paid.toFixed(2)}` },
+    { label: 'Totali', value: String(total) },
+    { label: 'Ricevute', value: String(received) },
+    { label: 'Accettati', value: String(accepted) },
+    { label: 'Attesa pagamento', value: String(pendingPayment) },
   ];
 
-  return (
-    <main>
-      <AppHeader />
-      <div className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'center', marginBottom: 32 }}>
-          <div>
-            <p style={{ color: 'var(--wine)', fontWeight: 800 }}>ROSSO DI SERA 2026</p>
-            <h1 style={{ margin: 0 }}>Dashboard staff</h1>
-            <p style={{ color: 'var(--muted)' }}>Accesso: {profile.full_name ?? profile.email} - {profile.role}</p>
-          </div>
-          <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link className="btn btn-secondary" href="/espositori">Espositori</Link>
-            <Link className="btn btn-secondary" href="/pagamenti">Pagamenti</Link>
-            <Link className="btn btn-primary" href="/candidatura">Nuova candidatura</Link>
-          </nav>
-        </header>
-
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20 }}>
-          {stats.map((item) => (
-            <div className="card" key={item.label}>
-              <p style={{ color: 'var(--muted)' }}>{item.label}</p>
-              <strong style={{ fontSize: 36, color: 'var(--wine)' }}>{item.value}</strong>
-            </div>
-          ))}
-        </section>
-
-        <section className="card" style={{ marginTop: 28 }}>
-          <h2>Operativita</h2>
-          <ul style={{ lineHeight: 2 }}>
-            <li>Valuta le candidature ricevute.</li>
-            <li>Aggiorna stato e note degli espositori.</li>
-            <li>Registra pagamenti dalla scheda espositore.</li>
-            <li>I posti disponibili diminuiscono solo quando una candidatura viene confermata.</li>
-          </ul>
-        </section>
-      </div>
-    </main>
-  );
+  return <main><AppHeader /><div className="container page"><header className="page-header"><div><p className="eyebrow">Rosso di Sera 2026</p><h1 className="page-title">Dashboard staff</h1><p className="muted">Accesso: {profile.full_name ?? profile.email} <span className="badge">{profile.role}</span></p></div><nav className="toolbar"><Link className="btn btn-secondary" href="/espositori">Espositori</Link><Link className="btn btn-secondary" href="/pagamenti">Pagamenti</Link><Link className="btn btn-primary" href="/candidatura">Nuova candidatura</Link></nav></header>
+    <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 20 }}>{stats.map((item) => <div className="card" key={item.label}><p className="muted">{item.label}</p><strong className="stat-value">{item.value}</strong></div>)}</section>
+    <section className="grid grid-3" style={{ marginTop: 28 }}><Link className="card" href="/espositori"><p className="eyebrow">Operatività</p><h2>Gestisci espositori</h2><p className="muted">Valuta candidature, aggiorna stati e note interne.</p></Link><Link className="card" href="/pagamenti"><p className="eyebrow">Pagamenti</p><h2>Controlla incassi</h2><p className="muted">Registra pagamenti e verifica quote ancora da incassare.</p></Link><Link className="card" href="/sync/google-sheet"><p className="eyebrow">Sync</p><h2>Import/export</h2><p className="muted">Aggiorna Google Sheet, importa CSV e controlla conflitti.</p></Link></section>
+  </div></main>;
 }
