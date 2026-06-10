@@ -31,8 +31,13 @@ export default async function PaymentsPage() {
     <main>
       <AppHeader />
       <div className="container" style={{ paddingTop: 36, paddingBottom: 36 }}>
-        <p style={{ color: 'var(--wine)', fontWeight: 800 }}>GESTIONE</p>
-        <h1>Pagamenti</h1>
+        <header style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 24 }}>
+          <div>
+            <p style={{ color: 'var(--wine)', fontWeight: 800 }}>GESTIONE</p>
+            <h1 style={{ margin: 0 }}>Pagamenti</h1>
+          </div>
+          <a href="/api/export/payments" className="btn btn-secondary">Esporta CSV</a>
+        </header>
         {error ? <div className="card" style={{ color: 'var(--wine)', marginBottom: 24 }}>Errore caricamento: {error.message}</div> : null}
         <section className="grid grid-2" style={{ marginBottom: 24 }}>
           <div className="card"><p>Incasso previsto registrato</p><strong style={{ fontSize: 36 }}>€ {expected.toFixed(2)}</strong></div>
