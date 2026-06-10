@@ -7,8 +7,14 @@ type PaymentRow = {
   paid_amount: number;
   payment_date: string | null;
   payment_method: string | null;
-  exhibitors: { brand_name: string } | null;
+  exhibitors: { brand_name: string }[] | { brand_name: string } | null;
 };
+
+function getExhibitorName(exhibitors: PaymentRow['exhibitors']) {
+  if (!exhibitors) return '-';
+  if (Array.isArray(exhibitors)) return exhibitors[0]?.brand_name ?? '-';
+  return exhibitors.brand_name ?? '-';
+}
 
 export default async function PaymentsPage() {
   const supabase = await createClient();
@@ -17,7 +23,7 @@ export default async function PaymentsPage() {
     .select('id, expected_amount, paid_amount, payment_date, payment_method, exhibitors(brand_name)')
     .order('created_at', { ascending: false });
 
-  const payments = (data ?? []) as PaymentRow[];
+  const payments = (data ?? []) as unknown as PaymentRow[];
   const expected = payments.reduce((sum, item) => sum + Number(item.expected_amount ?? 0), 0);
   const paid = payments.reduce((sum, item) => sum + Number(item.paid_amount ?? 0), 0);
 
@@ -36,7 +42,7 @@ export default async function PaymentsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr style={{ textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Espositore</th><th style={{ padding: 12 }}>Previsto</th><th style={{ padding: 12 }}>Pagato</th><th style={{ padding: 12 }}>Metodo</th><th style={{ padding: 12 }}>Data</th></tr></thead>
             <tbody>
-              {payments.map((item) => <tr key={item.id} style={{ borderTop: '1px solid var(--border)' }}><td style={{ padding: 12 }}>{item.exhibitors?.brand_name ?? '-'}</td><td style={{ padding: 12 }}>€ {Number(item.expected_amount).toFixed(2)}</td><td style={{ padding: 12 }}>€ {Number(item.paid_amount).toFixed(2)}</td><td style={{ padding: 12 }}>{item.payment_method ?? '-'}</td><td style={{ padding: 12 }}>{item.payment_date ?? '-'}</td></tr>)}
+              {payments.map((item) => <tr key={item.id} style={{ borderTop: '1px solid var(--border)' }}><td style={{ padding: 12 }}>{getExhibitorName(item.exhibitors)}</td><td style={{ padding: 12 }}>€ {Number(item.expected_amount).toFixed(2)}</td><td style={{ padding: 12 }}>€ {Number(item.paid_amount).toFixed(2)}</td><td style={{ padding: 12 }}>{item.payment_method ?? '-'}</td><td style={{ padding: 12 }}>{item.payment_date ?? '-'}</td></tr>)}
               {payments.length === 0 ? <tr><td colSpan={5} style={{ padding: 24, color: 'var(--muted)' }}>Nessun pagamento registrato.</td></tr> : null}
             </tbody>
           </table>
