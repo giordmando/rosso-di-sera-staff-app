@@ -20,7 +20,9 @@ export async function GET() {
     const supabase = createSupabaseAdmin();
     const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:N' });
     const rows = sheet.data.values ?? [];
-    const { data: exhibitors, error } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at');
+    const { data: edition } = await supabase.from('editions').select('id').eq('is_active', true).order('year', { ascending: false }).limit(1).single();
+    if (!edition) return NextResponse.json({ message: 'Nessuna edizione attiva configurata' }, { status: 400 });
+    const { data: exhibitors, error } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at').eq('edition_id', edition.id);
     if (error) return NextResponse.json({ message: error.message }, { status: 400 });
     const byId = new Map((exhibitors ?? []).map((item) => [String(item.id), item]));
     const byEmail = new Map((exhibitors ?? []).filter((item) => item.email).map((item) => [String(item.email).toLowerCase(), item]));
