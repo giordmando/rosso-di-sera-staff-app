@@ -40,9 +40,9 @@ export async function POST(request: Request) {
   const supabase = createSupabaseAdmin();
   const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:N' });
   const rows = sheet.data.values ?? [];
-  const { data: edition } = await supabase.from('editions').select('id').eq('year', 2026).single();
-  if (!edition) return NextResponse.json({ message: 'Edizione 2026 non configurata' }, { status: 400 });
-  const { data: exhibitors } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at');
+  const { data: edition } = await supabase.from('editions').select('id').eq('is_active', true).order('year', { ascending: false }).limit(1).single();
+  if (!edition) return NextResponse.json({ message: 'Nessuna edizione attiva configurata' }, { status: 400 });
+  const { data: exhibitors } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at').eq('edition_id', edition.id);
   const byId = new Map((exhibitors ?? []).map((item) => [String(item.id), item]));
   const byEmail = new Map((exhibitors ?? []).filter((item) => item.email).map((item) => [String(item.email).toLowerCase(), item]));
   const byBrand = new Map((exhibitors ?? []).map((item) => [String(item.brand_name).toLowerCase(), item]));
@@ -57,14 +57,9 @@ export async function POST(request: Request) {
     const isConflict = existing && sheetDate && existing.updated_at && new Date(existing.updated_at) > new Date(sheetDate);
     if (isConflict && !overwriteConflicts) { skippedConflicts++; continue; }
     const payload = toPayload(record);
-    if (existing) {
-      await supabase.from('exhibitors').update(payload).eq('id', existing.id);
-      updated++;
-    } else {
-      await supabase.from('exhibitors').insert({ ...payload, edition_id: edition.id });
-      created++;
-    }
+    if (existing) { await supabase.from('exhibitors').update(payload).eq('id', existing.id); updated++; }
+    else { await supabase.from('exhibitors').insert({ ...payload, edition_id: edition.id }); created++; }
   }
-  await writeAuditLog({ action: 'google_sheet.import.apply', entityType: 'google_sheet', entityId: spreadsheetId, message: 'Applicato import Google Sheet', metadata: { created, updated, skippedConflicts, overwriteConflicts } });
+  await writeAuditLog({ action: 'google_sheet.import.apply', entityType: 'google_sheet', entityId: spreadsheetId, message: 'Applicato import Google Sheet', metadata: { created, updated, skippedConflicts, overwriteConflicts, editionId: edition.id } });
   return NextResponse.json({ message: 'Import completato', created, updated, skippedConflicts });
 }
