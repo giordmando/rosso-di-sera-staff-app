@@ -17,5 +17,5 @@ export async function AppHeader() {
 }
 
 function NavLinks({ isAdmin }: { isAdmin: boolean }) {
-  return <><Link href="/dashboard">Dashboard</Link><Link href="/espositori">Espositori</Link><Link href="/pagamenti">Pagamenti</Link><Link href="/sync/google-sheet">Sync</Link><Link href="/candidatura">Candidatura</Link>{isAdmin ? <Link href="/utenti">Utenti</Link> : null}{isAdmin ? <Link href="/log">Log</Link> : null}</>;
+  return <><Link href="/dashboard">Dashboard</Link><Link href="/espositori">Espositori</Link><Link href="/pagamenti">Pagamenti</Link><Link href="/report">Report</Link><Link href="/sync/google-sheet">Sync</Link><Link href="/candidatura">Candidatura</Link>{isAdmin ? <Link href="/edizioni">Edizioni</Link> : null}{isAdmin ? <Link href="/utenti">Utenti</Link> : null}{isAdmin ? <Link href="/log">Log</Link> : null}</>;
 }
