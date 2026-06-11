@@ -15,6 +15,7 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "xlsx": "latest",
     "zod": "latest"
   },
   "devDependencies": {
