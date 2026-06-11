@@ -4,6 +4,7 @@ import { requireActiveStaff } from '@/lib/auth/profile';
 import { getSheetsClient } from '@/lib/google/sheets';
 import { writeAuditLog } from '@/lib/audit/log';
 import { normalizeProvince, normalizeRegion } from '@/lib/geo/normalize';
+import { getActiveEditionSheetConfig } from '@/lib/google/edition-sheet';
 
 const headers = ['ID', 'Cantina', 'Ragione sociale', 'Referente', 'Email', 'Telefono', 'Comune', 'Provincia', 'Regione', 'Stato', 'Prodotti', 'Note interne', 'Creato il', 'Aggiornato il'];
 
@@ -34,14 +35,11 @@ export async function POST(request: Request) {
   await requireActiveStaff();
   const body = await request.json().catch(() => ({}));
   const overwriteConflicts = Boolean(body.overwriteConflicts);
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  if (!spreadsheetId) return NextResponse.json({ message: 'GOOGLE_SHEETS_SPREADSHEET_ID mancante' }, { status: 500 });
   const sheets = getSheetsClient();
   const supabase = createSupabaseAdmin();
-  const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Espositori!A2:N' });
+  const { edition, spreadsheetId, exhibitorsSheet } = await getActiveEditionSheetConfig();
+  const sheet = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${exhibitorsSheet}!A2:N` });
   const rows = sheet.data.values ?? [];
-  const { data: edition } = await supabase.from('editions').select('id').eq('is_active', true).order('year', { ascending: false }).limit(1).single();
-  if (!edition) return NextResponse.json({ message: 'Nessuna edizione attiva configurata' }, { status: 400 });
   const { data: exhibitors } = await supabase.from('exhibitors').select('id, brand_name, email, updated_at').eq('edition_id', edition.id);
   const byId = new Map((exhibitors ?? []).map((item) => [String(item.id), item]));
   const byEmail = new Map((exhibitors ?? []).filter((item) => item.email).map((item) => [String(item.email).toLowerCase(), item]));
