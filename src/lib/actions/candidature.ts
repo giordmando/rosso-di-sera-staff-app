@@ -35,8 +35,8 @@ export async function submitCandidature(_: CandidatureState, formData: FormData)
 
   if (!parsed.success) return { ok: false, message: 'Controlla i dati obbligatori.' };
 
-  const { data: edition } = await supabase.from('editions').select('id').eq('year', 2026).single();
-  if (!edition) return { ok: false, message: 'Edizione 2026 non configurata.' };
+  const { data: edition } = await supabase.from('editions').select('id').eq('is_active', true).order('year', { ascending: false }).limit(1).single();
+  if (!edition) return { ok: false, message: 'Nessuna edizione attiva configurata.' };
 
   const { error } = await supabase.from('exhibitors').insert({
     edition_id: edition.id,
