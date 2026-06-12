@@ -5,15 +5,20 @@ export const PAYMENTS_SHEET = 'Pagamenti';
 
 export async function getActiveEditionSheetConfig() {
   const supabase = createSupabaseAdmin();
-  const { data: edition, error } = await supabase
+  const { data: editions, error } = await supabase
     .from('editions')
-    .select('id, year, name, google_spreadsheet_id')
+    .select('id, year, name, google_spreadsheet_id, is_active')
     .eq('is_active', true)
-    .order('year', { ascending: false })
-    .limit(1)
-    .single();
+    .order('year', { ascending: false });
 
-  if (error || !edition) throw new Error('Nessuna edizione attiva configurata');
+  if (error) throw new Error(error.message);
+  if (!editions || editions.length === 0) throw new Error('Nessuna edizione attiva configurata');
+  if (editions.length > 1) {
+    const names = editions.map((item) => `${item.year} (${item.google_spreadsheet_id || 'senza Google Sheet'})`).join(', ');
+    throw new Error(`Sono presenti più edizioni attive: ${names}. Lascia attiva una sola edizione da /edizioni.`);
+  }
+
+  const edition = editions[0];
   if (!edition.google_spreadsheet_id) throw new Error(`Google Sheet non configurato per ${edition.name}`);
 
   return {
