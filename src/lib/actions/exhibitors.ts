@@ -3,9 +3,15 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/auth/admin';
+import { requireActiveStaff, requireAdmin } from '@/lib/auth/profile';
 import { writeAuditLog } from '@/lib/audit/log';
 import { normalizeProvince, normalizeRegion } from '@/lib/geo/normalize';
 import type { ExhibitorStatus } from '@/types/database';
+
+function idsFromForm(formData: FormData) {
+  return formData.getAll('ids').map((id) => String(id)).filter(Boolean);
+}
 
 export async function updateExhibitor(formData: FormData) {
   const supabase = await createClient();
@@ -33,4 +39,32 @@ export async function updateExhibitor(formData: FormData) {
   revalidatePath('/espositori');
   revalidatePath('/dashboard');
   redirect(`/espositori/${id}?saved=${error ? 'error' : 'ok'}`);
+}
+
+export async function bulkUpdateExhibitorStatus(formData: FormData) {
+  await requireActiveStaff();
+  const ids = idsFromForm(formData);
+  const status = String(formData.get('status') || '') as ExhibitorStatus;
+  if (!ids.length) return { ok: false, message: 'Nessun espositore selezionato.' };
+  if (!status) return { ok: false, message: 'Stato mancante.' };
+  const supabase = await createClient();
+  const { error } = await supabase.from('exhibitors').update({ status, updated_at: new Date().toISOString() }).in('id', ids);
+  if (error) return { ok: false, message: `Errore aggiornamento: ${error.message}` };
+  await writeAuditLog({ action: 'exhibitor.bulk_status_update', entityType: 'exhibitor', message: `Aggiornati ${ids.length} espositori`, metadata: { ids, status, count: ids.length } });
+  revalidatePath('/espositori');
+  revalidatePath('/dashboard');
+  return { ok: true, message: `Aggiornati ${ids.length} espositori.` };
+}
+
+export async function bulkDeleteExhibitors(formData: FormData) {
+  await requireAdmin();
+  const ids = idsFromForm(formData);
+  if (!ids.length) return { ok: false, message: 'Nessun espositore selezionato.' };
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase.from('exhibitors').delete().in('id', ids);
+  if (error) return { ok: false, message: `Errore eliminazione: ${error.message}` };
+  await writeAuditLog({ action: 'exhibitor.bulk_delete', entityType: 'exhibitor', message: `Eliminati ${ids.length} espositori`, metadata: { ids, count: ids.length } });
+  revalidatePath('/espositori');
+  revalidatePath('/dashboard');
+  return { ok: true, message: `Eliminati ${ids.length} espositori.` };
 }
