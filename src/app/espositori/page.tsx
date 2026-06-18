@@ -5,11 +5,12 @@ import { GoogleSheetExportButton } from '@/components/GoogleSheetExportButton';
 import { createClient } from '@/lib/supabase/server';
 import { getStaffProfile } from '@/lib/auth/profile';
 import { getActiveEdition } from '@/lib/editions/active';
+import { EXHIBITOR_STATUSES } from '@/lib/constants';
 import { BulkExhibitorsTable, type BulkExhibitorRow } from './BulkExhibitorsTable';
-import type { Exhibitor } from '@/types/database';
+import type { Exhibitor, ExhibitorStatus } from '@/types/database';
 
 type ExhibitorRow = Pick<Exhibitor, 'id' | 'brand_name' | 'company_name' | 'city' | 'province' | 'region' | 'status' | 'email'>;
-type PageSearchParams = Promise<{ province?: string; region?: string }>;
+type PageSearchParams = Promise<{ province?: string; region?: string; status?: string }>;
 
 function unique(values: Array<string | null>) {
   return Array.from(new Set(values.filter(Boolean).map((value) => String(value).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'it'));
@@ -19,6 +20,10 @@ function clean(value: string | undefined) {
   return String(value ?? '').trim();
 }
 
+function isValidStatus(value: string): value is ExhibitorStatus {
+  return EXHIBITOR_STATUSES.some((status) => status.value === value);
+}
+
 export default async function ExhibitorsPage({ searchParams }: { searchParams: PageSearchParams }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -26,10 +31,12 @@ export default async function ExhibitorsPage({ searchParams }: { searchParams: P
   const activeEdition = await getActiveEdition();
   const selectedProvince = clean(params.province);
   const selectedRegion = clean(params.region);
+  const selectedStatus = clean(params.status);
   const { data: allExhibitors } = await supabase.from('exhibitors').select('province, region').eq('edition_id', activeEdition.id);
   let query = supabase.from('exhibitors').select('id, brand_name, company_name, city, province, region, status, email').eq('edition_id', activeEdition.id).order('created_at', { ascending: false });
   if (selectedProvince) query = query.ilike('province', selectedProvince);
   if (selectedRegion) query = query.ilike('region', selectedRegion);
+  if (isValidStatus(selectedStatus)) query = query.eq('status', selectedStatus);
   const { data: exhibitors, error } = await query;
   const rows = (exhibitors ?? []) as ExhibitorRow[];
   const provinces = unique((allExhibitors ?? []).map((item) => item.province));
@@ -56,6 +63,7 @@ export default async function ExhibitorsPage({ searchParams }: { searchParams: P
           <form className="card form-row filter-card" action="/espositori">
             <label><span>Regione</span><select name="region" defaultValue={selectedRegion}><option value="">Tutte</option>{regions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
             <label><span>Provincia</span><select name="province" defaultValue={selectedProvince}><option value="">Tutte</option>{provinces.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+            <label><span>Stato</span><select name="status" defaultValue={isValidStatus(selectedStatus) ? selectedStatus : ''}><option value="">Tutti</option>{EXHIBITOR_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
             <button className="btn btn-primary" type="submit">Filtra</button>
             <Link className="btn btn-secondary" href="/espositori">Reset</Link>
             <span className="muted result-count">{rows.length} risultati</span>
