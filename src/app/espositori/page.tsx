@@ -4,6 +4,7 @@ import { AppFooter } from '@/components/AppFooter';
 import { GoogleSheetExportButton } from '@/components/GoogleSheetExportButton';
 import { createClient } from '@/lib/supabase/server';
 import { getStaffProfile } from '@/lib/auth/profile';
+import { getActiveEdition } from '@/lib/editions/active';
 import { BulkExhibitorsTable, type BulkExhibitorRow } from './BulkExhibitorsTable';
 import type { Exhibitor } from '@/types/database';
 
@@ -22,10 +23,11 @@ export default async function ExhibitorsPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const supabase = await createClient();
   const staff = await getStaffProfile();
+  const activeEdition = await getActiveEdition();
   const selectedProvince = clean(params.province);
   const selectedRegion = clean(params.region);
-  const { data: allExhibitors } = await supabase.from('exhibitors').select('province, region');
-  let query = supabase.from('exhibitors').select('id, brand_name, company_name, city, province, region, status, email').order('created_at', { ascending: false });
+  const { data: allExhibitors } = await supabase.from('exhibitors').select('province, region').eq('edition_id', activeEdition.id);
+  let query = supabase.from('exhibitors').select('id, brand_name, company_name, city, province, region, status, email').eq('edition_id', activeEdition.id).order('created_at', { ascending: false });
   if (selectedProvince) query = query.ilike('province', selectedProvince);
   if (selectedRegion) query = query.ilike('region', selectedRegion);
   const { data: exhibitors, error } = await query;
