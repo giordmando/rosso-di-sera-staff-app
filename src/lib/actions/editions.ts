@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createSupabaseAdmin } from '@/lib/auth/admin';
 import { requireAdmin } from '@/lib/auth/profile';
 import { writeAuditLog } from '@/lib/audit/log';
@@ -25,6 +26,7 @@ export async function createEdition(formData: FormData) {
   if (!error) await writeAuditLog({ action: 'edition.create', entityType: 'edition', entityId: data?.id, message: `Creata edizione ${payload.year}`, metadata: payload });
   revalidatePath('/edizioni');
   revalidatePath('/dashboard');
+  redirect(`/edizioni?edition=${error ? 'create-error' : 'created'}`);
 }
 
 export async function updateEdition(formData: FormData) {
@@ -45,4 +47,5 @@ export async function updateEdition(formData: FormData) {
   if (!error) await writeAuditLog({ action: 'edition.update', entityType: 'edition', entityId: id, message: `Aggiornata edizione ${payload.name}`, metadata: payload });
   revalidatePath('/edizioni');
   revalidatePath('/dashboard');
+  redirect(`/edizioni?edition=${error ? 'update-error' : 'updated'}`);
 }
