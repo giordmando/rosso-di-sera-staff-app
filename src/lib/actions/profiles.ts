@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/auth/profile';
 import { writeAuditLog } from '@/lib/audit/log';
@@ -18,11 +19,11 @@ export async function createProfile(formData: FormData) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const fullName = String(formData.get('full_name') || '').trim();
   const role = String(formData.get('role') || 'operator') === 'admin' ? 'admin' : 'operator';
-  if (!email) return;
+  if (!email) redirect('/utenti?user=create-error');
   const { error } = await supabase.from('staff_access').upsert({ email, full_name: fullName || null, role, is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'email' });
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: 'staff_access.upsert', entityType: 'staff_access', entityId: email, message: `Autorizzato accesso staff ${email}`, metadata: { role } });
+  if (!error) await writeAuditLog({ action: 'staff_access.upsert', entityType: 'staff_access', entityId: email, message: `Autorizzato accesso staff ${email}`, metadata: { role } });
   revalidatePath('/utenti');
+  redirect(`/utenti?user=${error ? 'create-error' : 'created'}`);
 }
 
 export async function updateProfile(formData: FormData) {
@@ -32,10 +33,10 @@ export async function updateProfile(formData: FormData) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const role = String(formData.get('role') || 'operator');
   const nextActive = formData.get('is_active') === 'on';
-  if (!id) return;
-  if (email === current.email && !nextActive) throw new Error('Non puoi disattivare il tuo accesso.');
+  if (!id) redirect('/utenti?user=update-error');
+  if (email === current.email && !nextActive) redirect('/utenti?user=self-disable-error');
   const { error } = await supabase.from('staff_access').update({ full_name: String(formData.get('full_name') || '') || null, role: role === 'admin' ? 'admin' : 'operator', is_active: nextActive, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: 'staff_access.update', entityType: 'staff_access', entityId: id, message: `Aggiornato accesso staff ${email}`, metadata: { role, isActive: nextActive } });
+  if (!error) await writeAuditLog({ action: 'staff_access.update', entityType: 'staff_access', entityId: id, message: `Aggiornato accesso staff ${email}`, metadata: { role, isActive: nextActive } });
   revalidatePath('/utenti');
+  redirect(`/utenti?user=${error ? 'update-error' : 'updated'}`);
 }
